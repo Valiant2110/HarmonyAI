@@ -1,12 +1,12 @@
 # backend/main.py
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from pydantic import BaseModel
-from backend.gemini_client import generate_playlist
+from backend.gemini_client import generate_playlist , generate_lyrics
 import shutil
 import os
 from backend.mood_analyzer import predict_mood, generate_mood_description
 from backend.utils.audio_helpers import extract_features
-
+from backend.melody_generator import generate_melody
 
 app = FastAPI()
 UPLOAD_DIR = "uploads"
@@ -49,3 +49,26 @@ async def analyze_mood(file: UploadFile = File(...)):
         "mood": mood,
         "description": description
     }
+
+class LyricsInput(BaseModel):
+    theme: str
+    mood: str
+
+@app.post("/generate_lyrics/")
+def get_lyrics(input: LyricsInput):
+    lyrics = generate_lyrics(theme=input.theme, mood=input.mood)
+    return {"lyrics": lyrics}
+
+@app.post("/generate_melody/")
+def melody_from_mood(mood: str):
+    try:
+        wav_path = generate_melody(mood)
+        return {
+            "melody_url": f"/files/{os.path.basename(wav_path)}"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Add static file route
+from fastapi.staticfiles import StaticFiles
+app.mount("/files", StaticFiles(directory="generated"), name="files")
