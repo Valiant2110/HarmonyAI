@@ -1,9 +1,17 @@
 # backend/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from pydantic import BaseModel
 from backend.gemini_client import generate_playlist
+import shutil
+import os
+from backend.mood_analyzer import predict_mood, generate_mood_description
+from backend.utils.audio_helpers import extract_features
+
 
 app = FastAPI()
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
 
 class PromptInput(BaseModel):
     prompt: str
@@ -12,3 +20,32 @@ class PromptInput(BaseModel):
 def get_playlist(input: PromptInput):
     result = generate_playlist(input.prompt)
     return {"playlist": result}
+
+
+@app.post("/analyze_mood/")
+async def analyze_mood(file: UploadFile = File(...)):
+    # Validate file type
+    if file.content_type not in ["audio/mpeg", "audio/wav"]:
+        raise HTTPException(status_code=400, detail="Invalid audio format. Upload .mp3 or .wav only.")
+
+    # Save uploaded file
+    file_path = os.path.join(UPLOAD_DIR, file.filename)
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Extract features
+    features = extract_features(file_path)
+
+    # Predict mood
+    mood = predict_mood(features)
+
+    # Generate description
+    description = generate_mood_description(mood)
+
+    # Clean up (optional)
+    os.remove(file_path)
+
+    return {
+        "mood": mood,
+        "description": description
+    }
