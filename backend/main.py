@@ -9,7 +9,7 @@ from backend.utils.audio_helpers import extract_features
 from backend.melody_generator import generate_melody
 
 app = FastAPI()
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = "/tmp/uploads"  # Cloud Run only allows writes to /tmp
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
@@ -75,8 +75,8 @@ def health_check():
 
 # Add static file route
 from fastapi.staticfiles import StaticFiles
-app.mount("/files", StaticFiles(directory="generated"), name="files")
+app.mount("/files", StaticFiles(directory="tmp/generated"), name="files")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+    uvicorn.run("main:app", host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))

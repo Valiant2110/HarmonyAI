@@ -22,8 +22,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy your application code
 COPY backend/ ./backend/
 
-# Create necessary directories (for uploads and generated files)
-RUN mkdir -p uploads generated
+
 
 # Expose port 8080 (required for Google Cloud Run)
 EXPOSE 8080
