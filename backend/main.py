@@ -68,7 +68,15 @@ def melody_from_mood(mood: str):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/")
+def health_check():
+    return {"status": "ok"}
 
 # Add static file route
 from fastapi.staticfiles import StaticFiles
 app.mount("/files", StaticFiles(directory="generated"), name="files")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
