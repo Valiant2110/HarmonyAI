@@ -50,7 +50,7 @@ The project is built with a **FastAPI** backend and a **React** frontend.
 1. Clone the repository:
 
     ```bash
-    git clone <your-repo-url>
+    git clone https://github.com/Valiant2110/HarmonyAI
     cd backend
     ```
 
