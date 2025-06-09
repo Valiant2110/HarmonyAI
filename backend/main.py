@@ -1,5 +1,6 @@
 # backend/main.py
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from backend.gemini_client import generate_playlist , generate_lyrics
 import shutil
@@ -8,7 +9,22 @@ from backend.mood_analyzer import predict_mood, generate_mood_description
 from backend.utils.audio_helpers import extract_features
 from backend.melody_generator import generate_melody
 
+
 app = FastAPI()
+origins = [
+    "http://localhost:3000",
+    "http://localhost:5173",  # add your frontend URL and port here
+    # add more origins if needed
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],  # or specify methods like ["GET", "POST", "OPTIONS"]
+    allow_headers=["*"],
+)
+
 UPLOAD_DIR = "/tmp/uploads"  # Cloud Run only allows writes to /tmp
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -25,8 +41,9 @@ def get_playlist(input: PromptInput):
 @app.post("/analyze_mood/")
 async def analyze_mood(file: UploadFile = File(...)):
     # Validate file type
-    if file.content_type not in ["audio/mpeg", "audio/wav"]:
-        raise HTTPException(status_code=400, detail="Invalid audio format. Upload .mp3 or .wav only.")
+    if not file.content_type.startswith("audio/"):
+        raise HTTPException(status_code=400, detail="Invalid audio format. Upload audio files only (.mp3, .wav, etc).")
+
 
     # Save uploaded file
     file_path = os.path.join(UPLOAD_DIR, file.filename)
